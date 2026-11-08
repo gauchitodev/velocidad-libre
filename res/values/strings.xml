@@ -1,4 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Textos en español (idioma por defecto). Para sumar un idioma: copiá este archivo a values-XX/ y traducí. -->
 <resources>
-    <string name="nombre">Velocidad</string>
+    <string name="nombre" translatable="false">Velocidad Libre</string>
+    <string name="apagado">Apagado</string>
+    <string name="gps_bien">GPS bien</string>
+    <string name="buscando_gps">Buscando GPS…</string>
+    <string name="proximo_en">próximo aviso en %1$s</string>
+    <string name="acel_parar">0 a 100: pará para empezar</string>
+    <string name="acel_listo">0 a 100: listo, acelerá</string>
+    <string name="acel_midiendo">0 a 100: midiendo…</string>
+    <string name="acel_resultado">0 a 100 en %1$s s</string>
+    <string name="cada_min">Cada %1$d min</string>
+    <string name="cada_10">Cada 10 km/h</string>
+    <string name="cero_cien">0 a 100</string>
+    <string name="cancelar_cero_cien">Cancelar 0 a 100</string>
+    <string name="empezar">Empezar</string>
+    <string name="parar">Parar</string>
+    <string name="decir_ahora">Decir ahora</string>
+    <string name="historial">Historial</string>
+    <string name="ayuda_historial">Tocá un viaje para ver los avisos. Mantenelo apretado para copiarlo o borrarlo.</string>
+    <string name="sin_viajes">Todavía no hay viajes. Tocá Empezar y arrancá.</string>
+    <string name="sin_avisos">Sin avisos todavía.</string>
+    <string name="en_curso">en curso</string>
+    <string name="sin_gps">sin GPS</string>
+    <string name="abrev_prom">prom</string>
+    <string name="abrev_max">máx</string>
+    <string name="copiar">Copiar</string>
+    <string name="borrar_viaje">Borrar este viaje</string>
+    <string name="parar_antes">Pará el viaje antes de borrarlo</string>
+    <string name="viaje_copiado">Viaje copiado</string>
+    <string name="confirmar_borrar">¿Borrar el viaje del %1$s?</string>
+    <string name="borrar">Borrar</string>
+    <string name="cancelar">Cancelar</string>
+    <string name="no_pude_borrar">No pude borrarlo</string>
+    <string name="bateria_msg">Para que siga avisando con la pantalla apagada, dejala usar la batería sin restricciones.</string>
+    <string name="dale">Dale</string>
+    <string name="ahora_no">Ahora no</string>
+    <string name="bateria_ajustes">Buscalo en Ajustes › Batería</string>
+    <string name="sin_permiso">Sin permiso de ubicación no puedo medir la velocidad</string>
+    <string name="falta_voz">Falta la voz en este idioma. Tocá acá para instalarla.</string>
+    <string name="idioma">Idioma</string>
+    <string name="canal">Velocidad en curso</string>
+    <string name="notif_proximo">próximo aviso %1$s</string>
+    <string name="voz_inicio">Listo. Aviso la velocidad cada %1$d minutos.</string>
+    <string name="voz_intervalo">Ahora aviso cada %1$d minutos.</string>
+    <string name="voz_velocidad">Vas a %1$d kilómetros por hora, promedio %2$d.</string>
+    <string name="voz_sin_gps">Sin señal de GPS.</string>
+    <string name="voz_acel_cancelado">Cero a cien cancelado.</string>
+    <string name="voz_acel_listo_inicio">Cero a cien. Listo, acelerá cuando quieras.</string>
+    <string name="voz_acel_parar">Cero a cien. Pará para empezar.</string>
+    <string name="voz_acel_listo">Listo, acelerá cuando quieras.</string>
+    <string name="voz_acel_resultado">Cero a cien en %1$s segundos.</string>
+    <string name="voz_acel_cortado">Cortado. Listo de nuevo.</string>
+    <string name="voz_acel_tiempo">No llegó a cien en un minuto.</string>
 </resources>

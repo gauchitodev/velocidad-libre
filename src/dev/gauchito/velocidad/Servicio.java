@@ -45,9 +45,9 @@ public class Servicio extends Service implements LocationListener, TextToSpeech.
     static final String REPROGRAMAR = "dev.gauchito.velocidad.REPROGRAMAR";
     static final String ACEL = "dev.gauchito.velocidad.ACEL";
     static final String ACEL_CANCELAR = "dev.gauchito.velocidad.ACEL_CANCELAR";
+    static final String IDIOMA = "dev.gauchito.velocidad.IDIOMA";
     private static final String CANAL = "velocidad";
     private static final String TAG = "Velocidad";
-    private static final Locale UY = Locale.forLanguageTag("es-UY");
 
     // Modo 0 a 100.
     static final int ACEL_NO = 0, ACEL_ESPERA_PARADO = 1, ACEL_LISTO = 2, ACEL_MIDIENDO = 3;
@@ -60,12 +60,14 @@ public class Servicio extends Service implements LocationListener, TextToSpeech.
     static volatile long proximoAviso;  // elapsedRealtime del próximo aviso
     static volatile int acel = ACEL_NO;
     static volatile String ultimoCeroCien;
+    static volatile boolean sinVoz;   // el teléfono no tiene voz para el idioma elegido
 
     private final Handler h = new Handler(Looper.getMainLooper());
     private LocationManager lm;
     private TextToSpeech tts;
     private boolean ttsListo;
     private String pendiente;
+    private Locale vozPuesta;
     private AudioManager am;
     private AudioFocusRequest foco;
     private PowerManager.WakeLock wl;
@@ -100,6 +102,9 @@ public class Servicio extends Service implements LocationListener, TextToSpeech.
 
     static File archivo(Context c) { return new File(c.getFilesDir(), "registro.csv"); }
 
+    /** Texto en el idioma elegido en la app (se lee cada vez: se puede cambiar en marcha). */
+    private String t(int id, Object... args) { return Idioma.envolver(this).getString(id, args); }
+
     @Override public IBinder onBind(Intent i) { return null; }
 
     @Override public int onStartCommand(Intent i, int flags, int id) {
@@ -113,20 +118,22 @@ public class Servicio extends Service implements LocationListener, TextToSpeech.
         } else if (REPROGRAMAR.equals(a)) {
             programar();
             notificar(true);
-            hablar("Ahora aviso cada " + minutos(this) + " minutos.");
+            hablar(t(R.string.voz_intervalo, minutos(this)));
         } else if (ACEL.equals(a)) {
             armarAcel();
         } else if (ACEL_CANCELAR.equals(a)) {
             terminarAcel();
-            hablar("Cero a cien cancelado.");
+            hablar(t(R.string.voz_acel_cancelado));
+        } else if (IDIOMA.equals(a)) {
+            canal();
+            notificar(true);
         }
         return START_STICKY;
     }
 
     private boolean arrancar() {
         nm = getSystemService(NotificationManager.class);
-        nm.createNotificationChannel(new NotificationChannel(CANAL, "Velocidad en curso",
-                NotificationManager.IMPORTANCE_LOW));
+        canal();
         try {
             if (Build.VERSION.SDK_INT >= 29) {
                 startForeground(1, notificacion(), ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION);
@@ -142,7 +149,7 @@ public class Servicio extends Service implements LocationListener, TextToSpeech.
         am = getSystemService(AudioManager.class);
         wl = getSystemService(PowerManager.class).newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "velocidad:avisos");
         wl.acquire();
-        pendiente = "Listo. Aviso la velocidad cada " + minutos(this) + " minutos.";
+        pendiente = t(R.string.voz_inicio, minutos(this));
         tts = new TextToSpeech(this, this);
         iniTramo = iniViaje = SystemClock.elapsedRealtime();
         kmh = -1;
@@ -154,6 +161,10 @@ public class Servicio extends Service implements LocationListener, TextToSpeech.
         programar();
         notificar(true);
         return true;
+    }
+
+    private void canal() {
+        nm.createNotificationChannel(new NotificationChannel(CANAL, t(R.string.canal), NotificationManager.IMPORTANCE_LOW));
     }
 
     private boolean pedirGps(long cadaMs) {
@@ -224,9 +235,9 @@ public class Servicio extends Service implements LocationListener, TextToSpeech.
             acel = ACEL_LISTO;
             acelV = kmh;
             acelT = SystemClock.elapsedRealtimeNanos();
-            hablar("Cero a cien. Listo, acelerá cuando quieras.");
+            hablar(t(R.string.voz_acel_listo_inicio));
         } else {
-            hablar("Cero a cien. Pará la moto para empezar.");
+            hablar(t(R.string.voz_acel_parar));
         }
         notificar(true);
     }
@@ -244,7 +255,7 @@ public class Servicio extends Service implements LocationListener, TextToSpeech.
             case ACEL_ESPERA_PARADO:
                 if (v < ARRANQUE) {
                     acel = ACEL_LISTO;
-                    hablar("Listo, acelerá cuando quieras.");
+                    hablar(t(R.string.voz_acel_listo));
                     notificar(true);
                 }
                 break;
@@ -258,16 +269,16 @@ public class Servicio extends Service implements LocationListener, TextToSpeech.
             case ACEL_MIDIENDO:
                 if (v >= 100) {
                     double s = (cruce(acelV, acelT, v, t, 100) - acelInicio) / 1e9;
-                    ultimoCeroCien = String.format(UY, "%.1f", s);
-                    hablar("Cero a cien en " + ultimoCeroCien + " segundos.");
+                    ultimoCeroCien = String.format(Idioma.locale(this), "%.1f", s);
+                    hablar(t(R.string.voz_acel_resultado, ultimoCeroCien));
                     registrar("acel", String.format(Locale.ROOT, "%.1f", s), "", "", "", km(mViaje));
                     terminarAcel();
                 } else if (v < ARRANQUE) {
                     acel = ACEL_LISTO;
-                    hablar("Cortado. Listo de nuevo.");
+                    hablar(t(R.string.voz_acel_cortado));
                     notificar(true);
                 } else if (t - acelInicio > 60e9) {
-                    hablar("No llegó a cien en un minuto.");
+                    hablar(t(R.string.voz_acel_tiempo));
                     terminarAcel();
                 }
                 break;
@@ -323,8 +334,8 @@ public class Servicio extends Service implements LocationListener, TextToSpeech.
     private static String km(double metros) { return String.format(Locale.ROOT, "%.1f", metros / 1000); }
 
     private String texto() {
-        if (!conSenal()) return "Sin señal de GPS.";
-        return "Vas a " + Math.round(kmh) + " kilómetros por hora, promedio " + prom(mTramo, iniTramo) + ".";
+        if (!conSenal()) return t(R.string.voz_sin_gps);
+        return t(R.string.voz_velocidad, (int) Math.round(kmh), (int) prom(mTramo, iniTramo));
     }
 
     private void aviso() {
@@ -364,13 +375,24 @@ public class Servicio extends Service implements LocationListener, TextToSpeech.
             foco = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
                     .setAudioAttributes(atributos()).build();
         }
+        ponerVoz();
         am.requestAudioFocus(foco);  // baja la música mientras habla
         tts.speak(t, TextToSpeech.QUEUE_FLUSH, null, "v" + SystemClock.elapsedRealtime());
     }
 
+    /** Pone la voz del idioma elegido; si el teléfono no la tiene, prueba sin país y avisa a la pantalla. */
+    private void ponerVoz() {
+        Locale v = Idioma.voz(this);
+        if (v.equals(vozPuesta)) return;
+        vozPuesta = v;
+        int r = tts.setLanguage(v);
+        if (r < 0) r = tts.setLanguage(new Locale(v.getLanguage()));
+        sinVoz = r < 0;
+        Log.i(TAG, "voz " + v + " -> " + r);
+    }
+
     @Override public void onInit(int estado) {
         if (estado != TextToSpeech.SUCCESS || tts == null) return;
-        if (tts.setLanguage(Locale.forLanguageTag("es-US")) < 0) tts.setLanguage(Locale.forLanguageTag("es"));
         tts.setAudioAttributes(atributos());
         tts.setOnUtteranceProgressListener(new UtteranceProgressListener() {
             @Override public void onStart(String id) { }
@@ -384,13 +406,13 @@ public class Servicio extends Service implements LocationListener, TextToSpeech.
     private void soltarFoco() { if (am != null && foco != null) am.abandonAudioFocusRequest(foco); }
 
     private Notification notificacion() {
-        String txt = conSenal() ? Math.round(kmh) + " km/h" : "Buscando GPS…";
-        if (acel == ACEL_ESPERA_PARADO) txt += " · 0 a 100: pará la moto";
-        else if (acel == ACEL_LISTO) txt += " · 0 a 100: listo";
-        else if (acel == ACEL_MIDIENDO) txt += " · 0 a 100: midiendo";
+        String txt = conSenal() ? Math.round(kmh) + " km/h" : t(R.string.buscando_gps);
+        if (acel == ACEL_ESPERA_PARADO) txt += " · " + t(R.string.acel_parar);
+        else if (acel == ACEL_LISTO) txt += " · " + t(R.string.acel_listo);
+        else if (acel == ACEL_MIDIENDO) txt += " · " + t(R.string.acel_midiendo);
         else if (proximoAviso > 0) {
             long cuando = System.currentTimeMillis() + (proximoAviso - SystemClock.elapsedRealtime());
-            txt += " · próximo aviso " + new SimpleDateFormat("HH:mm", Locale.ROOT).format(new Date(cuando));
+            txt += " · " + t(R.string.notif_proximo, new SimpleDateFormat("HH:mm", Locale.ROOT).format(new Date(cuando)));
         }
         int f = PendingIntent.FLAG_IMMUTABLE | PendingIntent.FLAG_UPDATE_CURRENT;
         PendingIntent abrir = PendingIntent.getActivity(this, 0, new Intent(this, Principal.class), f);
@@ -399,13 +421,13 @@ public class Servicio extends Service implements LocationListener, TextToSpeech.
         Icon ic = Icon.createWithResource(this, R.drawable.notif);
         return new Notification.Builder(this, CANAL)
                 .setSmallIcon(R.drawable.notif)
-                .setContentTitle("Velocidad · cada " + minutos(this) + " min")
+                .setContentTitle(t(R.string.nombre) + " · " + t(R.string.cada_min, minutos(this)))
                 .setContentText(txt)
                 .setOngoing(true)
                 .setOnlyAlertOnce(true)
                 .setContentIntent(abrir)
-                .addAction(new Notification.Action.Builder(ic, "Decir ahora", decir).build())
-                .addAction(new Notification.Action.Builder(ic, "Parar", parar).build())
+                .addAction(new Notification.Action.Builder(ic, t(R.string.decir_ahora), decir).build())
+                .addAction(new Notification.Action.Builder(ic, t(R.string.parar), parar).build())
                 .build();
     }
 
@@ -427,6 +449,7 @@ public class Servicio extends Service implements LocationListener, TextToSpeech.
         kmh = -1;
         proximoAviso = 0;
         acel = ACEL_NO;
+        sinVoz = false;
         if (lm != null) lm.removeUpdates(this);
         if (tts != null) tts.shutdown();
         soltarFoco();

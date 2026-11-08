@@ -5,18 +5,21 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Build;
-import android.os.PowerManager;
-import android.provider.Settings;
-import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.PowerManager;
 import android.os.SystemClock;
+import android.provider.Settings;
+import android.speech.tts.TextToSpeech;
+import android.text.format.DateFormat;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
@@ -44,7 +47,6 @@ import java.util.Set;
 public class Principal extends Activity {
     private static final int FONDO = 0xFF121412, SUPERFICIE = 0xFF1F241F, TEXTO = 0xFFE8E6E1,
             TENUE = 0xFF8C918B, VERDE = 0xFF7BC86C, ROJO = 0xFFE8603C, OSCURO = 0xFF101310;
-    private static final Locale UY = Locale.forLanguageTag("es-UY");
 
     private TextView vel, estado;
     private Button boton, decir, b5, b15, b10, bAcel;
@@ -52,6 +54,7 @@ public class Principal extends Activity {
     private final Set<Integer> abiertos = new HashSet<>();
     private boolean primeraCarga = true, activoAntes;
     private long tamanoLeido = -2;
+    private String accionPendiente;
     private final Handler h = new Handler(Looper.getMainLooper());
     private final Runnable refresco = new Runnable() {
         @Override public void run() { refrescar(); h.postDelayed(this, 1000); }
@@ -62,6 +65,9 @@ public class Principal extends Activity {
         int desde, hasta;
         final List<String[]> filas = new ArrayList<>();
     }
+
+    // Toda la pantalla lee los textos en el idioma elegido en la app.
+    @Override protected void attachBaseContext(Context base) { super.attachBaseContext(Idioma.envolver(base)); }
 
     private int dp(float v) {
         return Math.round(TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, v, getResources().getDisplayMetrics()));
@@ -103,6 +109,16 @@ public class Principal extends Activity {
         return p;
     }
 
+    private LinearLayout fila(Button a, Button b) {
+        LinearLayout f = new LinearLayout(this);
+        LinearLayout.LayoutParams izq = new LinearLayout.LayoutParams(0, -2, 1);
+        LinearLayout.LayoutParams der = new LinearLayout.LayoutParams(0, -2, 1);
+        der.leftMargin = dp(10);
+        f.addView(a, izq);
+        f.addView(b, der);
+        return f;
+    }
+
     @Override protected void onCreate(Bundle b) {
         super.onCreate(b);
         getWindow().setStatusBarColor(FONDO);
@@ -111,38 +127,45 @@ public class Principal extends Activity {
         LinearLayout raiz = new LinearLayout(this);
         raiz.setOrientation(LinearLayout.VERTICAL);
         raiz.setBackgroundColor(FONDO);
-        raiz.setPadding(dp(20), dp(28), dp(20), 0);
+        raiz.setPadding(dp(20), dp(12), dp(20), 0);
+
+        // Idioma, arriba a la derecha.
+        LinearLayout arriba = new LinearLayout(this);
+        arriba.setGravity(Gravity.END);
+        TextView idioma = texto(Idioma.NOMBRES[Idioma.indice(this)], 14, TENUE);
+        GradientDrawable borde = new GradientDrawable();
+        borde.setCornerRadius(dp(20));
+        borde.setStroke(dp(1), 0xFF3A403A);
+        idioma.setBackground(borde);
+        idioma.setPadding(dp(14), dp(7), dp(14), dp(7));
+        idioma.setContentDescription(getString(R.string.idioma));
+        idioma.setOnClickListener(v -> elegirIdioma(false));
+        arriba.addView(idioma);
+        raiz.addView(arriba, ancho(0));
 
         vel = texto("—", 104, TEXTO);
         vel.setTypeface(Typeface.create("sans-serif-condensed", Typeface.BOLD));
         vel.setGravity(Gravity.CENTER);
         vel.setIncludeFontPadding(false);
-        raiz.addView(vel, ancho(0));
+        raiz.addView(vel, ancho(4));
         TextView unidad = texto("km/h", 18, TENUE);
         unidad.setGravity(Gravity.CENTER);
         raiz.addView(unidad, ancho(0));
-        estado = texto("Apagado", 15, TENUE);
+        estado = texto(getString(R.string.apagado), 15, TENUE);
         estado.setGravity(Gravity.CENTER);
+        estado.setOnClickListener(v -> {
+            if (Servicio.activo && Servicio.sinVoz) instalarVoz();
+        });
         raiz.addView(estado, ancho(10));
 
-        LinearLayout fila = new LinearLayout(this);
-        b5 = boton("Cada 5 min");
-        b15 = boton("Cada 15 min");
-        LinearLayout.LayoutParams mitad = new LinearLayout.LayoutParams(0, -2, 1);
-        LinearLayout.LayoutParams mitad2 = new LinearLayout.LayoutParams(0, -2, 1);
-        mitad2.leftMargin = dp(10);
-        fila.addView(b5, mitad);
-        fila.addView(b15, mitad2);
-        raiz.addView(fila, ancho(28));
-        LinearLayout fila2 = new LinearLayout(this);
-        b10 = boton("Cada 10 km/h");
-        bAcel = boton("0 a 100");
-        LinearLayout.LayoutParams m3 = new LinearLayout.LayoutParams(0, -2, 1);
-        LinearLayout.LayoutParams m4 = new LinearLayout.LayoutParams(0, -2, 1);
-        m4.leftMargin = dp(10);
-        fila2.addView(b10, m3);
-        fila2.addView(bAcel, m4);
-        raiz.addView(fila2, ancho(10));
+        b5 = boton(getString(R.string.cada_min, 5));
+        b15 = boton(getString(R.string.cada_min, 15));
+        raiz.addView(fila(b5, b15), ancho(24));
+        b10 = boton(getString(R.string.cada_10));
+        bAcel = boton(getString(R.string.cero_cien));
+        raiz.addView(fila(b10, bAcel), ancho(10));
+        b5.setOnClickListener(v -> elegir(5));
+        b15.setOnClickListener(v -> elegir(15));
         b10.setOnClickListener(v -> {
             getSharedPreferences("p", 0).edit().putBoolean("diez", !Servicio.porDecena(this)).apply();
             pintarIntervalo();
@@ -152,10 +175,8 @@ public class Principal extends Activity {
             else if (Servicio.activo) mandar(Servicio.ACEL);
             else empezar(Servicio.ACEL);
         });
-        b5.setOnClickListener(v -> elegir(5));
-        b15.setOnClickListener(v -> elegir(15));
 
-        boton = boton("Empezar");
+        boton = boton(getString(R.string.empezar));
         boton.setTextSize(20);
         boton.setMinHeight(dp(68));
         boton.setTypeface(Typeface.DEFAULT_BOLD);
@@ -165,16 +186,15 @@ public class Principal extends Activity {
             else empezar(null);
         });
 
-        decir = boton("Decir ahora");
+        decir = boton(getString(R.string.decir_ahora));
         pintar(decir, SUPERFICIE, TEXTO);
         raiz.addView(decir, ancho(10));
         decir.setOnClickListener(v -> mandar(Servicio.DECIR));
 
-        TextView titulo = texto("Historial", 17, TEXTO);
+        TextView titulo = texto(getString(R.string.historial), 17, TEXTO);
         titulo.setTypeface(Typeface.DEFAULT_BOLD);
         raiz.addView(titulo, ancho(24));
-        raiz.addView(texto("Tocá un viaje para ver los avisos. Mantenelo apretado para copiarlo o borrarlo.",
-                13, TENUE), ancho(2));
+        raiz.addView(texto(getString(R.string.ayuda_historial), 13, TENUE), ancho(2));
 
         ScrollView sv = new ScrollView(this);
         lista = new LinearLayout(this);
@@ -185,11 +205,34 @@ public class Principal extends Activity {
 
         setContentView(raiz);
         pintarIntervalo();
+        if (!Idioma.elegido(this)) elegirIdioma(true);
     }
 
     @Override protected void onResume() { super.onResume(); h.post(refresco); }
 
     @Override protected void onPause() { super.onPause(); h.removeCallbacks(refresco); }
+
+    /** La primera vez no se puede saltear; después se abre desde el botón de arriba. */
+    private void elegirIdioma(boolean primera) {
+        new AlertDialog.Builder(this)
+                .setTitle(primera ? "Idioma · Language" : getString(R.string.idioma))
+                .setSingleChoiceItems(Idioma.NOMBRES, Idioma.indice(this), (d, w) -> {
+                    d.dismiss();
+                    Idioma.elegir(this, Idioma.CODIGOS[w]);
+                    if (Servicio.activo) startService(new Intent(this, Servicio.class).setAction(Servicio.IDIOMA));
+                    recreate();
+                })
+                .setCancelable(!primera)
+                .show();
+    }
+
+    private void instalarVoz() {
+        try {
+            startActivity(new Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA));
+        } catch (RuntimeException e) {
+            Toast.makeText(this, R.string.falta_voz, Toast.LENGTH_LONG).show();
+        }
+    }
 
     private void elegir(int min) {
         getSharedPreferences("p", 0).edit().putInt("min", min).apply();
@@ -210,8 +253,6 @@ public class Principal extends Activity {
         h.postDelayed(this::refrescar, 300);
     }
 
-    private String accionPendiente;
-
     private void empezar(String accion) {
         accionPendiente = accion;
         List<String> faltan = new ArrayList<>();
@@ -227,7 +268,7 @@ public class Principal extends Activity {
 
     @Override public void onRequestPermissionsResult(int c, String[] permisos, int[] r) {
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) lanzar();
-        else Toast.makeText(this, "Sin permiso de ubicación no puedo medir la velocidad", Toast.LENGTH_LONG).show();
+        else Toast.makeText(this, R.string.sin_permiso, Toast.LENGTH_LONG).show();
     }
 
     private void lanzar() {
@@ -244,21 +285,21 @@ public class Principal extends Activity {
         if (getSharedPreferences("p", 0).getBoolean("pidioBateria", false)) return;
         getSharedPreferences("p", 0).edit().putBoolean("pidioBateria", true).apply();
         new AlertDialog.Builder(this)
-                .setMessage("Para que siga avisando con la pantalla apagada, dejala usar la batería sin restricciones.")
-                .setPositiveButton("Dale", (d, w) -> {
+                .setMessage(R.string.bateria_msg)
+                .setPositiveButton(R.string.dale, (d, w) -> {
                     try {
                         startActivity(new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
                                 Uri.parse("package:" + getPackageName())));
                     } catch (RuntimeException e) {
-                        Toast.makeText(this, "Buscalo en Ajustes › Batería", Toast.LENGTH_LONG).show();
+                        Toast.makeText(this, R.string.bateria_ajustes, Toast.LENGTH_LONG).show();
                     }
                 })
-                .setNegativeButton("Ahora no", null).show();
+                .setNegativeButton(R.string.ahora_no, null).show();
     }
 
     private void refrescar() {
         boolean a = Servicio.activo;
-        boton.setText(a ? "Parar" : "Empezar");
+        boton.setText(a ? R.string.parar : R.string.empezar);
         pintar(boton, a ? ROJO : VERDE, OSCURO);
         decir.setEnabled(a);
         decir.setAlpha(a ? 1f : 0.4f);
@@ -267,22 +308,25 @@ public class Principal extends Activity {
         String e;
         if (!a) {
             vel.setText("—");
-            e = "Apagado";
+            e = getString(R.string.apagado);
         } else {
             vel.setText(senal ? String.valueOf(Math.round(Servicio.kmh)) : "—");
-            e = senal ? "GPS bien" : "Buscando GPS…";
+            e = getString(senal ? R.string.gps_bien : R.string.buscando_gps);
             if (Servicio.proximoAviso > 0) {
                 long s = Math.max(0, (Servicio.proximoAviso - ahora) / 1000);
-                e += String.format(Locale.ROOT, " · próximo aviso en %d:%02d", s / 60, s % 60);
+                e += " · " + getString(R.string.proximo_en, String.format(Locale.ROOT, "%d:%02d", s / 60, s % 60));
             }
         }
         int ac = Servicio.acel;
-        if (ac == Servicio.ACEL_ESPERA_PARADO) e = "0 a 100: pará la moto";
-        else if (ac == Servicio.ACEL_LISTO) e = "0 a 100: listo, acelerá";
-        else if (ac == Servicio.ACEL_MIDIENDO) e = "0 a 100: midiendo…";
-        else if (Servicio.ultimoCeroCien != null && a) e = "0 a 100 en " + Servicio.ultimoCeroCien + " s · " + e;
+        if (ac == Servicio.ACEL_ESPERA_PARADO) e = getString(R.string.acel_parar);
+        else if (ac == Servicio.ACEL_LISTO) e = getString(R.string.acel_listo);
+        else if (ac == Servicio.ACEL_MIDIENDO) e = getString(R.string.acel_midiendo);
+        else if (Servicio.ultimoCeroCien != null && a) e = getString(R.string.acel_resultado, Servicio.ultimoCeroCien) + " · " + e;
+        boolean faltaVoz = a && Servicio.sinVoz;
+        if (faltaVoz) e = getString(R.string.falta_voz);
         estado.setText(e);
-        bAcel.setText(ac == Servicio.ACEL_NO ? "0 a 100" : "Cancelar 0 a 100");
+        estado.setTextColor(faltaVoz ? ROJO : TENUE);
+        bAcel.setText(ac == Servicio.ACEL_NO ? R.string.cero_cien : R.string.cancelar_cero_cien);
         pintar(bAcel, ac == Servicio.ACEL_NO ? SUPERFICIE : ROJO, ac == Servicio.ACEL_NO ? TEXTO : OSCURO);
         File f = Servicio.archivo(this);
         long tam = f.exists() ? f.length() : -1;
@@ -341,16 +385,17 @@ public class Principal extends Activity {
         }
     }
 
-    private static String km(double v) { return String.format(UY, "%.1f", v); }
+    private String uno(double v) { return String.format(Idioma.locale(this), "%.1f", v); }
 
-    private static String titulo(Viaje v, boolean enCurso) {
+    private String titulo(Viaje v, boolean enCurso) {
         String[] a = v.filas.get(0), z = v.filas.get(v.filas.size() - 1);
         Date d = cuando(a);
-        String dia = d == null ? a[0] : new SimpleDateFormat("EEE d/MM", UY).format(d);
-        return dia + " · " + a[1] + (enCurso ? " · en curso" : "–" + z[1]);
+        Locale l = Idioma.locale(this);
+        String dia = d == null ? a[0] : new SimpleDateFormat(DateFormat.getBestDateTimePattern(l, "EEEdMM"), l).format(d);
+        return dia + " · " + a[1] + (enCurso ? " · " + getString(R.string.en_curso) : "–" + z[1]);
     }
 
-    private static String resumen(Viaje v) {
+    private String resumen(Viaje v) {
         Date a = cuando(v.filas.get(0)), z = cuando(v.filas.get(v.filas.size() - 1));
         long min = a == null || z == null ? 0 : (z.getTime() - a.getTime()) / 60000;
         double kms = 0, mejor = 0;
@@ -367,34 +412,36 @@ public class Principal extends Activity {
         }
         if (prom < 0) prom = min > 0 ? Math.round(kms / (min / 60.0)) : 0;
         String dur = min < 60 ? min + " min" : (min / 60) + " h " + (min % 60) + " min";
-        return km(kms) + " km · " + dur + " · prom " + prom + " · máx " + max
-                + (mejor > 0 ? " · 0–100 " + km(mejor) + " s" : "");
+        return uno(kms) + " km · " + dur + " · " + getString(R.string.abrev_prom) + " " + prom
+                + " · " + getString(R.string.abrev_max) + " " + max
+                + (mejor > 0 ? " · " + getString(R.string.acel_resultado, uno(mejor)) : "");
     }
 
-    private static String detalle(Viaje v) {
+    private String detalle(Viaje v) {
+        String prom = getString(R.string.abrev_prom), max = getString(R.string.abrev_max);
         StringBuilder sb = new StringBuilder();
         for (String[] c : v.filas) {
             if (c[2].equals("acel")) {
                 if (sb.length() > 0) sb.append('\n');
-                sb.append(c[1]).append("  0 a 100 en ").append(km(num(c[3]))).append(" s");
+                sb.append(c[1]).append("  ").append(getString(R.string.acel_resultado, uno(num(c[3]))));
                 continue;
             }
             if (!c[2].equals("aviso")) continue;
             if (sb.length() > 0) sb.append('\n');
             sb.append(c[1]).append("  ");
-            if (c[3].equals("sin GPS")) sb.append("sin GPS ");
+            if (c[3].equals("sin GPS")) sb.append(getString(R.string.sin_gps));
             else sb.append(String.format(Locale.ROOT, "%3s km/h", c[3]));
-            sb.append("  prom ").append(c[4]).append("  máx ").append(c[5])
-                    .append("  ").append(km(num(c[6]))).append(" km");
+            sb.append("  ").append(prom).append(' ').append(c[4]).append("  ").append(max).append(' ').append(c[5])
+                    .append("  ").append(uno(num(c[6]))).append(" km");
         }
-        return sb.length() == 0 ? "Sin avisos todavía." : sb.toString();
+        return sb.length() == 0 ? getString(R.string.sin_avisos) : sb.toString();
     }
 
     private void mostrarHistorial() {
         List<Viaje> vs = viajes(lineas());
         lista.removeAllViews();
         if (vs.isEmpty()) {
-            lista.addView(texto("Todavía no hay viajes. Tocá Empezar y salí a andar.", 14, TENUE), ancho(14));
+            lista.addView(texto(getString(R.string.sin_viajes), 14, TENUE), ancho(14));
             return;
         }
         if (primeraCarga) {
@@ -431,9 +478,9 @@ public class Principal extends Activity {
         t.setOnLongClickListener(x -> {
             new AlertDialog.Builder(this)
                     .setTitle(titulo(v, enCurso))
-                    .setItems(new String[]{"Copiar", "Borrar este viaje"}, (d, w) -> {
+                    .setItems(new String[]{getString(R.string.copiar), getString(R.string.borrar_viaje)}, (d, w) -> {
                         if (w == 0) copiar(v, enCurso);
-                        else if (enCurso) Toast.makeText(this, "Pará el viaje antes de borrarlo", Toast.LENGTH_SHORT).show();
+                        else if (enCurso) Toast.makeText(this, R.string.parar_antes, Toast.LENGTH_SHORT).show();
                         else confirmarBorrar(v);
                     }).show();
             return true;
@@ -443,15 +490,15 @@ public class Principal extends Activity {
 
     private void copiar(Viaje v, boolean enCurso) {
         String txt = titulo(v, enCurso) + "\n" + resumen(v) + "\n\n" + detalle(v);
-        getSystemService(ClipboardManager.class).setPrimaryClip(ClipData.newPlainText("Viaje", txt));
-        Toast.makeText(this, "Viaje copiado", Toast.LENGTH_SHORT).show();
+        getSystemService(ClipboardManager.class).setPrimaryClip(ClipData.newPlainText("Velocidad Libre", txt));
+        Toast.makeText(this, R.string.viaje_copiado, Toast.LENGTH_SHORT).show();
     }
 
     private void confirmarBorrar(Viaje v) {
         new AlertDialog.Builder(this)
-                .setMessage("¿Borrar el viaje del " + titulo(v, false) + "?")
-                .setPositiveButton("Borrar", (d, w) -> borrar(v))
-                .setNegativeButton("Cancelar", null).show();
+                .setMessage(getString(R.string.confirmar_borrar, titulo(v, false)))
+                .setPositiveButton(R.string.borrar, (d, w) -> borrar(v))
+                .setNegativeButton(R.string.cancelar, null).show();
     }
 
     private void borrar(Viaje v) {
@@ -463,7 +510,7 @@ public class Principal extends Activity {
         try (FileWriter w = new FileWriter(Servicio.archivo(this), false)) {
             w.write(sb.toString());
         } catch (IOException e) {
-            Toast.makeText(this, "No pude borrarlo", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.no_pude_borrar, Toast.LENGTH_SHORT).show();
         }
         abiertos.remove(v.desde);
         tamanoLeido = -2;
