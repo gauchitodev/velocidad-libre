@@ -196,14 +196,17 @@ public class Principal extends Activity {
         raiz.addView(titulo, ancho(24));
         raiz.addView(texto(getString(R.string.ayuda_historial), 13, TENUE), ancho(2));
 
-        ScrollView sv = new ScrollView(this);
         lista = new LinearLayout(this);
         lista.setOrientation(LinearLayout.VERTICAL);
-        lista.setPadding(0, 0, 0, dp(16));
-        sv.addView(lista);
-        raiz.addView(sv, new LinearLayout.LayoutParams(-1, 0, 1));
+        lista.setPadding(0, 0, 0, dp(24));
+        raiz.addView(lista, ancho(0));
 
-        setContentView(raiz);
+        // Toda la pantalla se desliza junta: el historial no queda en una ventanita abajo.
+        ScrollView pagina = new ScrollView(this);
+        pagina.setBackgroundColor(FONDO);
+        pagina.setFillViewport(true);
+        pagina.addView(raiz);
+        setContentView(pagina);
         pintarIntervalo();
         if (!Idioma.elegido(this)) elegirIdioma(true);
     }
@@ -306,6 +309,7 @@ public class Principal extends Activity {
         long ahora = SystemClock.elapsedRealtime();
         boolean senal = Servicio.ultimoFix > 0 && ahora - Servicio.ultimoFix < 10000;
         String e;
+        vel.setTextColor(a && senal ? TEXTO : 0xFF3A403A);
         if (!a) {
             vel.setText("—");
             e = getString(R.string.apagado);
