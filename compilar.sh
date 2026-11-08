@@ -8,8 +8,8 @@
 #   y android.jar (plataforma 34) de Google.
 set -euo pipefail
 
-VERSION_CODE=4
-VERSION_NAME=1.3
+VERSION_CODE=5
+VERSION_NAME=1.4
 
 AQUI="$(cd "$(dirname "$0")" && pwd)"
 H="$HOME/herramientas/android"

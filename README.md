@@ -1,33 +1,41 @@
-# Velocidad
+# Velocidad Libre
 
-App de Android que te dice la velocidad en voz alta mientras andás. Pensada para la moto: el teléfono en el bolsillo, los auriculares puestos, y cada tanto te avisa cómo venís. Sin publicidad, sin cuentas y sin internet.
+**English** · [Español](README.es.md)
 
-## Qué hace
+An Android app that tells you your speed out loud while you ride. Built for motorcycles: phone in your pocket, earphones on, and every so often it tells you how you're doing. No ads, no accounts, no internet.
 
-- **Cada 5 o 15 minutos** dice la velocidad actual y el promedio del tramo.
-- **De 10 en 10 km/h:** cuando cambiás de decena dice "noventa", "cien", "ciento diez". Se apaga con un botón.
-- **0 a 100:** tocás el botón, parás, acelerás y te dice en cuántos segundos llegaste a 100.
-- **Historial de viajes:** cada viaje queda guardado con km, duración, promedio, máxima y su mejor 0 a 100. Tocás un viaje para ver los avisos y lo mantenés apretado para copiarlo o borrarlo.
-- Mientras habla baja la música, y anda con la pantalla apagada.
-- La notificación tiene **Decir ahora** y **Parar**, así no tenés que abrir la app.
+The app and its voice are in Spanish.
 
-## Cómo instalarla
+## What it does
 
-Necesitás Android 8 o más nuevo.
+- **Every 5 or 15 minutes** it says your current speed and the average for that stretch.
+- **Every 10 km/h:** when you move into a new ten ("noventa", "cien", "ciento diez"), it says it. One button turns this off.
+- **0 to 100 km/h:** tap the button, stop, accelerate, and it tells you how many seconds it took to reach 100.
+- **Ride history:** each ride is saved with distance, duration, average and top speed, plus its best 0 to 100. Tap a ride to see its announcements; press and hold to copy or delete it.
+- It turns your music down while it talks, and it works with the screen off.
+- The notification has **Decir ahora** (say it now) and **Parar** (stop) buttons, so you don't need to open the app.
 
-1. Desde el teléfono, entrá a la [última versión](https://github.com/gauchitodev/velocidad/releases/latest) y bajá **velocidad.apk**.
-2. Abrí el archivo, desde la notificación de la descarga o desde la carpeta Descargas.
-3. La primera vez, Android te va a decir que no puede instalar apps de ese lugar. Tocá **Configuración**, activá **Permitir de esta fuente**, volvé atrás y tocá **Instalar**.
-4. Si aparece Play Protect diciendo que no conoce la app, tocá **Más detalles** y después **Instalar de todas formas**. Pasa con cualquier app que no viene de Play Store.
-5. Abrí **Velocidad**, tocá **Empezar** y aceptá la ubicación ("Mientras se usa la app") y las notificaciones.
-6. Cuando te pregunte por la batería, tocá **Dale** y después **Permitir**. Si no lo hacés, muchos teléfonos (Xiaomi, Samsung, Motorola, Huawei) cortan la app con la pantalla apagada.
+## How to install
 
-Si te habla en inglés, entrá a **Ajustes › Sistema › Idiomas › Salida de texto a voz** y elegí español.
+You need Android 8 or newer.
 
-## Privacidad
+1. On your phone, open the [latest release](https://github.com/gauchitodev/velocidad-libre/releases/latest) and download **velocidad-libre.apk**.
+2. Open the file, from the download notification or from your Downloads folder.
+3. The first time, Android will say it can't install apps from that source. Tap **Settings**, turn on **Allow from this source**, go back and tap **Install**.
+4. If Play Protect says it doesn't recognize the app, tap **More details** and then **Install anyway**. This happens with any app that doesn't come from the Play Store.
+5. Open **Velocidad Libre**, tap **Empezar** (start) and allow location ("While using the app") and notifications.
+6. When it asks about the battery, tap **Dale** (OK) and then **Allow**. Without this, many phones (Xiaomi, Samsung, Motorola, Huawei) kill the app when the screen is off.
 
-La app no tiene permiso para usar internet. Los viajes se guardan solo en tu teléfono.
+If the voice speaks English, go to **Settings › System › Languages › Text-to-speech output** and choose Spanish.
 
-## Compilar
+## Privacy
 
-Está hecha en Java, sin Gradle ni librerías externas. `compilar.sh` la arma con aapt2, javac, d8 y apksigner. Ajustá las rutas del principio del script a donde tengas esas herramientas.
+The app has no internet permission. Your rides are stored only on your phone.
+
+## Building
+
+It's plain Java, with no Gradle and no external libraries. `compilar.sh` builds it with aapt2, javac, d8 and apksigner. Edit the paths at the top of the script to point to wherever you have those tools.
+
+## License
+
+[MIT](LICENSE)

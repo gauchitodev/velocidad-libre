@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Velocidad: dice la velocidad GPS por audio cada 5 o 15 minutos, de 10 en 10 km/h, mide el 0 a 100 y guarda los viajes. -->
+<!-- Velocidad Libre: dice la velocidad GPS por audio cada 5 o 15 minutos, de 10 en 10 km/h, mide el 0 a 100 y guarda los viajes. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="dev.gauchito.velocidad">
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -12,7 +12,7 @@
     <queries>
         <intent><action android:name="android.intent.action.TTS_SERVICE" /></intent>
     </queries>
-    <application android:label="Velocidad" android:icon="@drawable/icono"
+    <application android:label="Velocidad Libre" android:icon="@drawable/icono"
         android:allowBackup="false"
         android:theme="@android:style/Theme.DeviceDefault.NoActionBar">
         <activity android:name=".Principal" android:exported="true"
