@@ -2,7 +2,7 @@
 
 **English** · [Español](README.es.md)
 
-An Android app that tells you your speed out loud while you move: on a motorcycle, in a car, on a bike, a truck or a tractor. Phone in your pocket or on the mount, and every so often it tells you how you're doing, without you having to look at the screen. No ads, no accounts, no internet.
+An Android app that tells you your speed out loud while you move, whatever you're moving on. Phone in your pocket or on the mount, and every so often it tells you how you're doing, without you having to look at the screen. No ads, no accounts, no internet.
 
 The app and its voice are in Spanish.
 

@@ -2,7 +2,7 @@
 
 [English](README.md) · **Español**
 
-App de Android que te dice la velocidad en voz alta mientras te movés: en moto, en auto, en bici, en camión o en tractor. Con el teléfono en el bolsillo o en el soporte, cada tanto te avisa cómo venís, sin que tengas que mirar la pantalla. Sin publicidad, sin cuentas y sin internet.
+App de Android que te dice la velocidad en voz alta mientras te movés, en lo que sea que te muevas. Con el teléfono en el bolsillo o en el soporte, cada tanto te avisa cómo venís, sin que tengas que mirar la pantalla. Sin publicidad, sin cuentas y sin internet.
 
 ## Qué hace
 
