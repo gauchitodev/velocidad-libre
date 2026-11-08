@@ -11,7 +11,7 @@ The app and its voice are in Spanish.
 - **Every 5 or 15 minutes** it says your current speed and the average for that stretch.
 - **Every 10 km/h:** when you move into a new ten ("noventa", "cien", "ciento diez"), it says it. One button turns this off.
 - **0 to 100 km/h:** tap the button, stop, accelerate, and it tells you how many seconds it took to reach 100.
-- **Ride history:** each ride is saved with distance, duration, average and top speed, plus its best 0 to 100. Tap a ride to see its announcements; press and hold to copy or delete it.
+- **Trip history:** each trip is saved with distance, duration, average and top speed, plus its best 0 to 100. Tap a trip to see its announcements; press and hold to copy or delete it.
 - It turns your music down while it talks, and it works with the screen off.
 - The notification has **Decir ahora** (say it now) and **Parar** (stop) buttons, so you don't need to open the app.
 
@@ -30,7 +30,7 @@ If the voice speaks English, go to **Settings › System › Languages › Text-
 
 ## Privacy
 
-The app has no internet permission. Your rides are stored only on your phone.
+The app has no internet permission. Your trips are stored only on your phone.
 
 ## Building
 
